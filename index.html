@@ -2,60 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Grade 2 Reading Proficiency</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.0"></script>
+  <title>Country Waves</title>
   <style>
-    canvas { max-width: 1000px; margin: 50px auto; display: block; }
+    body { margin: 0; background: #fff; }
+    canvas { display: block; margin: auto; background: #fff; }
   </style>
 </head>
 <body>
-<canvas id="chart"></canvas>
+<canvas id="waveCanvas" width="1000" height="600"></canvas>
+
 <script>
-  const labels = [2014, 2019];
-  const datasetInfo = {
-    BDI: [79.1, 78.9],
-    BEN: [9.6, 37.7],
-    BFA: [35.4, 34.2],
-    CIV: [17.3, 33.1],
-    CMR: [29.7, 39.4],
-    COD: [null, 41.6],
-    COG: [38, 63.3],
-    GAB: [null, 66.1],
-    GIN: [null, 23.3],
-    MDG: [null, 55.3],
-    NER: [9.8, 44.4],
-    SEN: [28.9, 47.7],
-    TCD: [18.1, 34],
-    TGO: [20.1, 24.5],
-  };
+  const canvas = document.getElementById("waveCanvas");
+  const ctx = canvas.getContext("2d");
 
-  const datasets = Object.entries(datasetInfo).map(([country, data]) => ({
-    label: country,
-    data,
-    fill: false,
-    borderWidth: 2
-  }));
+  const width = canvas.width;
+  const height = canvas.height;
+  const spacing = 10; // vertical space between lines
+  const lineLength = 40; // maximum line length
 
-  new Chart(document.getElementById('chart'), {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      plugins: {
-        zoom: {
-          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
-          pan: { enabled: true, mode: 'xy' }
-        },
-        title: {
-          display: true,
-          text: 'Proportion of Grade 2 Students with Reading Proficiency'
-        }
-      },
-      scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'Proficiency (%)' }},
-        x: { title: { display: true, text: 'Year' }}
-      }
+  // 국가별 색상 매핑
+  const countries = [
+    { code: 'BDI', freq: 1.0, phase: 0, color: '#e74c3c' },
+    { code: 'BEN', freq: 1.2, phase: 1, color: '#3498db' },
+    { code: 'BFA', freq: 0.8, phase: 0.5, color: '#2ecc71' },
+    { code: 'CIV', freq: 1.5, phase: 2, color: '#9b59b6' },
+    { code: 'CMR', freq: 1.3, phase: 1.5, color: '#f39c12' },
+    { code: 'NER', freq: 0.7, phase: 0.2, color: '#1abc9c' },
+    { code: 'SEN', freq: 1.1, phase: 0.3, color: '#34495e' }
+  ];
+
+  // 한 나라당 줄 개수
+  const linesPerCountry = Math.floor(height / countries.length);
+
+  countries.forEach((country, idx) => {
+    ctx.strokeStyle = country.color;
+    ctx.lineWidth = 2;
+
+    for (let i = 0; i < linesPerCountry; i += spacing) {
+      const y = idx * linesPerCountry + i;
+      const t = i / linesPerCountry * 4 * Math.PI;
+      const wave = Math.sin(t * country.freq + country.phase);
+      const offset = wave * lineLength;
+
+      ctx.beginPath();
+      ctx.moveTo(width / 2 - offset, y);
+      ctx.lineTo(width / 2 + offset, y);
+      ctx.stroke();
     }
   });
 </script>
