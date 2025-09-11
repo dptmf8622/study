@@ -2,172 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Reading Proficiency by Country</title>
+  <title>Grade 2 Reading Proficiency</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.0"></script>
   <style>
-    canvas {
-      max-width: 1000px;
-      margin: 50px auto;
-      display: block;
-    }
+    canvas { max-width: 1000px; margin: 50px auto; display: block; }
   </style>
 </head>
 <body>
-
-<canvas id="readingChart"></canvas>
-
+<canvas id="chart"></canvas>
 <script>
-  const data = {
-    labels: [2014, 2019],
-    datasets: [
-      {
-        label: 'BDI',
-        data: [79.1, 78.9],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'BEN',
-        data: [9.6, 37.7],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'BFA',
-        data: [35.4, 34.2],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'CIV',
-        data: [17.3, 33.1],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'CMR',
-        data: [29.7, 39.4],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'COD',
-        data: [null, 41.6],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'COG',
-        data: [38, 63.3],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'GAB',
-        data: [null, 66.1],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'GIN',
-        data: [null, 23.3],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'MDG',
-        data: [null, 55.3],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'NER',
-        data: [9.8, 44.4],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'SEN',
-        data: [28.9, 47.7],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'TCD',
-        data: [18.1, 34],
-        fill: false,
-        borderWidth: 2
-      },
-      {
-        label: 'TGO',
-        data: [20.1, 24.5],
-        fill: false,
-        borderWidth: 2
-      }
-    ]
+  const labels = [2014, 2019];
+  const datasetInfo = {
+    BDI: [79.1, 78.9],
+    BEN: [9.6, 37.7],
+    BFA: [35.4, 34.2],
+    CIV: [17.3, 33.1],
+    CMR: [29.7, 39.4],
+    COD: [null, 41.6],
+    COG: [38, 63.3],
+    GAB: [null, 66.1],
+    GIN: [null, 23.3],
+    MDG: [null, 55.3],
+    NER: [9.8, 44.4],
+    SEN: [28.9, 47.7],
+    TCD: [18.1, 34],
+    TGO: [20.1, 24.5],
   };
 
-  const config = {
+  const datasets = Object.entries(datasetInfo).map(([country, data]) => ({
+    label: country,
+    data,
+    fill: false,
+    borderWidth: 2
+  }));
+
+  new Chart(document.getElementById('chart'), {
     type: 'line',
-    data: data,
+    data: { labels, datasets },
     options: {
       responsive: true,
-      interaction: {
-        mode: 'nearest',
-        axis: 'x',
-        intersect: false
-      },
       plugins: {
         zoom: {
-          zoom: {
-            wheel: {
-              enabled: true
-            },
-            pinch: {
-              enabled: true
-            },
-            mode: 'xy'
-          },
-          pan: {
-            enabled: true,
-            mode: 'xy'
-          }
-        },
-        tooltip: {
-          enabled: true
-        },
-        legend: {
-          display: true
+          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
+          pan: { enabled: true, mode: 'xy' }
         },
         title: {
           display: true,
-          text: 'Proportion of Grade 2 Students Achieving Minimum Reading Proficiency (2014 vs 2019)'
+          text: 'Proportion of Grade 2 Students with Reading Proficiency'
         }
       },
       scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Proficiency (%)'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Year'
-          }
-        }
+        y: { beginAtZero: true, title: { display: true, text: 'Proficiency (%)' }},
+        x: { title: { display: true, text: 'Year' }}
       }
     }
-  };
-
-  new Chart(
-    document.getElementById('readingChart'),
-    config
-  );
+  });
 </script>
-
 </body>
 </html>
