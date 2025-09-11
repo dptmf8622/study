@@ -1,11 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title></title>
+  <meta charset="UTF-8">
+  <title>Reading Proficiency by Country</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.0"></script>
+  <style>
+    canvas {
+      max-width: 1000px;
+      margin: 50px auto;
+      display: block;
+    }
+  </style>
 </head>
 <body>
-이제 웹사이트 하나 만들었습니다.
+
+<canvas id="readingChart"></canvas>
+
+<script>
+  const data = {
+    labels: [2014, 2019],
+    datasets: [
+      {
+        label: 'BDI',
+        data: [79.1, 78.9],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'BEN',
+        data: [9.6, 37.7],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'BFA',
+        data: [35.4, 34.2],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'CIV',
+        data: [17.3, 33.1],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'CMR',
+        data: [29.7, 39.4],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'COD',
+        data: [null, 41.6],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'COG',
+        data: [38, 63.3],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'GAB',
+        data: [null, 66.1],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'GIN',
+        data: [null, 23.3],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'MDG',
+        data: [null, 55.3],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'NER',
+        data: [9.8, 44.4],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'SEN',
+        data: [28.9, 47.7],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'TCD',
+        data: [18.1, 34],
+        fill: false,
+        borderWidth: 2
+      },
+      {
+        label: 'TGO',
+        data: [20.1, 24.5],
+        fill: false,
+        borderWidth: 2
+      }
+    ]
+  };
+
+  const config = {
+    type: 'line',
+    data: data,
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      },
+      plugins: {
+        zoom: {
+          zoom: {
+            wheel: {
+              enabled: true
+            },
+            pinch: {
+              enabled: true
+            },
+            mode: 'xy'
+          },
+          pan: {
+            enabled: true,
+            mode: 'xy'
+          }
+        },
+        tooltip: {
+          enabled: true
+        },
+        legend: {
+          display: true
+        },
+        title: {
+          display: true,
+          text: 'Proportion of Grade 2 Students Achieving Minimum Reading Proficiency (2014 vs 2019)'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Proficiency (%)'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Year'
+          }
+        }
+      }
+    }
+  };
+
+  new Chart(
+    document.getElementById('readingChart'),
+    config
+  );
+</script>
+
 </body>
 </html>
