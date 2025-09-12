@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>유네스코 성인 문맹 인구 3D 선형차트</title>
+	<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+	<style>
+		body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif; }
+		#chart { width: 100vw; height: 100vh; }
+		#hoverLabel {
+			position: fixed;
+			z-index: 9999;
+			pointer-events: none;
+			transform: translate(16px, -16px);
+			padding: 8px 12px;
+			border-radius: 8px;
+			background: rgba(0,0,0,0.75);
+			color: #fff;
+			font-weight: 700;
+			font-size: 20px;
+			line-height: 1.2;
+			display: none;
+			white-space: nowrap;
+			box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+		}
+	</style>
+</head>
+<body>
+	<div id="chart"></div>
+	<div id="hoverLabel"></div>
+
+	<!-- 데이터 직접 내장: 로컬 파일 열기 시 fetch/CORS 문제 회피 -->
+	<script id="data-json" type="application/json">{"records":[{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2010,"value":373043072,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2011,"value":381003616,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2012,"value":387506592,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2013,"value":382879968,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2014,"value":381160096,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2015,"value":372072736,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2016,"value":362543872,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2017,"value":361722496,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2018,"value":361019872,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Africa","year":2019,"value":369461184,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2020,"value":366074976,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2021,"value":361176864,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Central and Southern Asia","year":2022,"value":355354624,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2010,"value":192381120,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2011,"value":189787760,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2012,"value":189194000,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2013,"value":191046560,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2014,"value":193190032,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2015,"value":195609872,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2016,"value":198054352,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2017,"value":201883568,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2018","value":196516544,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2019,"value":198810784,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2020,"value":203930320,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2021,"value":210719040,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: Sub-Saharan Africa","year":2022,"value":214930816,"magnitude":null,"qualifier":"UIS_EST"},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2010,"value":782677632,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2011,"value":778882816,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2012,"value":779228480,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2013,"value":774908224,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2014,"value":766682560,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2015,"value":755758528,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2016,"value":748601088,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2017,"value":748118912,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2018,"value":741032064,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2019,"value":749251776,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2020,"value":747734208,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2021,"value":746169216,"magnitude":null,"qualifier":null},{"indicatorId":"ILLPOP.AG15T99","geoUnit":"SDG: World","year":2022,"value":742012928,"magnitude":null,"qualifier":null}]}</script>
+
+	<script>
+	(function render() {
+		try {
+			const raw = document.getElementById('data-json').textContent;
+			const json = JSON.parse(raw);
+			const targetIndicator = 'ILLPOP.AG15T99';
+			const rows = (json && json.records) ? json.records.filter(r => r.indicatorId === targetIndicator) : [];
+
+			// geoUnit 별 그룹화
+			const grouped = new Map();
+			for (const r of rows) {
+				if (!grouped.has(r.geoUnit)) grouped.set(r.geoUnit, []);
+				grouped.get(r.geoUnit).push({ year: r.year, value: r.value });
+			}
+
+			const geoUnits = Array.from(grouped.keys()).sort();
+			const yIndexByGeo = new Map();
+			geoUnits.forEach((g, idx) => yIndexByGeo.set(g, idx));
+
+			const traces = [];
+			for (const geo of geoUnits) {
+				const arr = grouped.get(geo).slice().sort((a, b) => a.year - b.year);
+				const x = arr.map(d => d.year);
+				const y = arr.map(() => yIndexByGeo.get(geo));
+				const z = arr.map(d => d.value ?? null);
+				traces.push({
+					type: 'scatter3d',
+					mode: 'lines+markers',
+					x, y, z,
+					name: geo,
+					line: { width: 4 },
+					marker: { size: 3 },
+					hovertemplate: `${geo}<br>연도: %{x}<br>문맹 인구: %{z:,}명<extra></extra>`
+				});
+			}
+
+			const layout = {
+				scene: {
+					xaxis: { title: '연도', tickmode: 'linear' },
+					yaxis: { title: '국가/지역', tickmode: 'array', tickvals: geoUnits.map((_, i) => i), ticktext: geoUnits },
+					zaxis: { title: '문맹 인구 수', separatethousands: true }
+				},
+				margin: { l: 0, r: 0, t: 24, b: 0 },
+				legend: { orientation: 'h' },
+				paper_bgcolor: 'white',
+				plot_bgcolor: 'white',
+				title: { text: '성인 문맹 인구 (UNESCO)', x: 0.02, y: 0.98 }
+			};
+
+			const config = { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['select2d', 'lasso2d'] };
+			const chartEl = document.getElementById('chart');
+			const hoverEl = document.getElementById('hoverLabel');
+
+			Plotly.newPlot(chartEl, traces, layout, config);
+
+			chartEl.on('plotly_hover', (event) => {
+				const p = event.points && event.points[0];
+				if (!p) return;
+				const geo = p.data && p.data.name ? p.data.name : '';
+				const year = p.x;
+				const value = p.z;
+				const formatted = typeof value === 'number' ? value.toLocaleString() : value;
+				hoverEl.textContent = `${geo} | ${year}년 | ${formatted}명`;
+				hoverEl.style.left = `${event.event.clientX}px`;
+				hoverEl.style.top = `${event.event.clientY}px`;
+				hoverEl.style.display = 'block';
+			});
+			chartEl.on('plotly_unhover', () => { hoverEl.style.display = 'none'; });
+			window.addEventListener('resize', () => Plotly.Plots.resize(chartEl));
+		} catch (err) {
+			console.error(err);
+			alert('차트 렌더링 중 오류가 발생했습니다. 콘솔을 확인하세요.');
+		}
+	})();
+	</script>
+</body>
+</html>
