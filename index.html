@@ -1,55 +1,254 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>Country Waves</title>
+  <meta charset="utf-8" />
+  <title>실내 영화관 수: 세계 지도 (연도별 칩스 필터)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- D3 & TopoJSON -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+
   <style>
-    body { margin: 0; background: #fff; }
-    canvas { display: block; margin: auto; background: #fff; }
+    :root{
+      --bg:#0b0b0c;
+      --panel:#121214;
+      --chip:#1d1f22;
+      --chip-active:#2b6fe0;
+      --chip-text:#cfd3dc;
+      --chip-text-active:#fff;
+      --stroke:#2a2d33;
+      --hover:#ffffff;
+      --tooltip-bg: rgba(0,0,0,0.85);
+      --tooltip-text: #fff;
+    }
+    body{
+      margin:0;
+      font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,Apple Color Emoji,Segoe UI Emoji;
+      background:var(--bg);
+      color:#eaecef;
+      display:flex;
+      min-height:100vh;
+      align-items:center;
+      justify-content:center;
+    }
+    .wrap{
+      width:min(1100px, 94vw);
+      margin:auto;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .head{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; flex-wrap:wrap;
+    }
+    .title{ font-weight:700; letter-spacing:.2px; }
+    .subtitle{ color:#9aa3b2; font-size:14px; }
+    .chips{
+      display:flex; gap:8px; flex-wrap:wrap;
+      background:var(--panel); padding:10px; border-radius:12px;
+      border:1px solid #1b1f28;
+    }
+    .chip{
+      appearance:none; border:none; cursor:pointer;
+      padding:8px 12px; border-radius:999px;
+      background:var(--chip); color:var(--chip-text);
+      font-weight:600; font-size:13px; letter-spacing:.2px;
+      border:1px solid #242831; transition:all .16s ease;
+    }
+    .chip:hover{ transform:translateY(-1px); }
+    .chip.active{
+      background:var(--chip-active); color:var(--chip-text-active);
+      border-color:transparent;
+    }
+    .panel{
+      background:var(--panel);
+      border:1px solid #1b1f28;
+      border-radius:16px;
+      padding:14px;
+    }
+    svg{ display:block; width:100%; height:auto; }
+    .country{
+      stroke:var(--stroke);
+      stroke-width:0.6px;
+      vector-effect:non-scaling-stroke;
+      transition:opacity .1s ease;
+    }
+    .country:hover{
+      stroke:var(--hover);
+      stroke-width:1.2px;
+    }
+    .legend{
+      display:flex; gap:8px; align-items:center; color:#aab3c2; font-size:12px;
+      margin-top:8px;
+    }
+    .swatch{
+      width:140px; height:10px; border-radius:8px; background:linear-gradient(to right, hsl(0,0%,92%) 0%, hsl(0,0%,18%) 100%);
+      border:1px solid #232834;
+    }
+    #tooltip{
+      position:fixed; pointer-events:none; z-index:10;
+      padding:10px 14px; border-radius:10px;
+      background:var(--tooltip-bg); color:var(--tooltip-text);
+      font-weight:800; font-size:20px; line-height:1;
+      transform:translate(-50%, calc(-100% - 14px));
+      opacity:0; transition:opacity .1s ease, transform .1s ease;
+      border:1px solid #2b2f3b;
+      white-space:nowrap;
+      text-shadow: 0 1px 0 rgba(0,0,0,.3);
+    }
+    .foot{
+      color:#8b94a3; font-size:12px; margin-top:6px;
+    }
+    .muted{ color:#808899 }
   </style>
 </head>
 <body>
-<canvas id="waveCanvas" width="1000" height="600"></canvas>
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <div class="title">실내 영화관 수 (UNESCO) · 세계 지도</div>
+        <div class="subtitle">연도 칩스 버튼으로 필터 · 값이 클수록 더 어두운 회색</div>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="panel">
+      <svg id="map" viewBox="0 0 1000 520" aria-label="세계 지도: 실내 영화관 수"></svg>
+      <div class="legend">
+        <span class="muted">적음</span>
+        <div class="swatch" aria-hidden="true"></div>
+        <span class="muted">많음</span>
+      </div>
+    </div>
+
+    <div class="foot">
+      데이터: UNESCO Institute for Statistics (업로드한 <code>data.json</code>) · 값 0 또는 <span class="muted">NIL</span>은 밝은 회색으로 표시.
+    </div>
+  </div>
+
+  <div id="tooltip" role="status" aria-live="polite"></div>
 
 <script>
-  const canvas = document.getElementById("waveCanvas");
-  const ctx = canvas.getContext("2d");
+(async function(){
+  // ===== Config =====
+  const DATA_URL = './data.json'; // 업로드한 파일과 같은 폴더
+  const WORLD_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+  const svg = d3.select('#map');
+  const g = svg.append('g');
+  const tooltip = d3.select('#tooltip');
+  const chipsBox = d3.select('#chips');
 
-  const width = canvas.width;
-  const height = canvas.height;
-  const spacing = 10; // vertical space between lines
-  const lineLength = 40; // maximum line length
+  // ===== Load data =====
+  const [rawTopo, rawData] = await Promise.all([
+    fetch(WORLD_URL).then(r=>r.json()),
+    fetch(DATA_URL).then(r=>r.json())
+  ]);
 
-  // 국가별 색상 매핑
-  const countries = [
-    { code: 'BDI', freq: 1.0, phase: 0, color: '#e74c3c' },
-    { code: 'BEN', freq: 1.2, phase: 1, color: '#3498db' },
-    { code: 'BFA', freq: 0.8, phase: 0.5, color: '#2ecc71' },
-    { code: 'CIV', freq: 1.5, phase: 2, color: '#9b59b6' },
-    { code: 'CMR', freq: 1.3, phase: 1.5, color: '#f39c12' },
-    { code: 'NER', freq: 0.7, phase: 0.2, color: '#1abc9c' },
-    { code: 'SEN', freq: 1.1, phase: 0.3, color: '#34495e' }
-  ];
+  // data.json 구조에 맞게 정규화
+  // { geoUnit: 'KOR', year: 2017, value: 200, magnitude: 'NIL' | null }
+  const rows = (rawData.records || rawData || []).map(d => ({
+    iso3: d.geoUnit,
+    year: +d.year,
+    value: +d.value,
+    magnitude: d.magnitude
+  })).filter(d => d.iso3 && Number.isFinite(d.year));
 
-  // 한 나라당 줄 개수
-  const linesPerCountry = Math.floor(height / countries.length);
+  // 연도 목록
+  const years = Array.from(new Set(rows.map(d=>d.year))).sort((a,b)=>a-b);
 
-  countries.forEach((country, idx) => {
-    ctx.strokeStyle = country.color;
-    ctx.lineWidth = 2;
+  // ISO3 -> {year -> value} 맵
+  const byIsoYear = d3.rollup(rows, v=>new Map(v.map(x=>[x.year, (x.magnitude==='NIL'? 0 : (Number.isFinite(x.value)? x.value : 0))])), d=>d.iso3);
 
-    for (let i = 0; i < linesPerCountry; i += spacing) {
-      const y = idx * linesPerCountry + i;
-      const t = i / linesPerCountry * 4 * Math.PI;
-      const wave = Math.sin(t * country.freq + country.phase);
-      const offset = wave * lineLength;
+  // ===== World features =====
+  const world = topojson.feature(rawTopo, rawTopo.objects.countries);
+  const features = world.features;
 
-      ctx.beginPath();
-      ctx.moveTo(width / 2 - offset, y);
-      ctx.lineTo(width / 2 + offset, y);
-      ctx.stroke();
-    }
-  });
+  // 국가 코드 추출 보정: 다양한 파일 호환용
+  function getISO3(props, id){
+    return (props && (props.iso_a3 || props.ISO_A3 || props.adm0_a3 || props.ADM0_A3)) || id || null;
+  }
+
+  // 투영/경로
+  const projection = d3.geoNaturalEarth1().fitSize([1000, 500], world);
+  const path = d3.geoPath(projection);
+
+  // 칩스 UI 생성
+  chipsBox.selectAll('button.chip')
+    .data(years)
+    .enter()
+    .append('button')
+    .attr('class','chip')
+    .classed('active', (d,i)=> i===years.length-1)
+    .text(d=>d)
+    .on('click', function(e, y){
+      chipsBox.selectAll('.chip').classed('active', d=>d===y);
+      currentYear = y;
+      render(y);
+    });
+
+  let currentYear = years[years.length-1];
+
+  // 초기 path 추가
+  const countries = g.selectAll('path.country')
+    .data(features)
+    .enter()
+    .append('path')
+    .attr('class','country')
+    .attr('d', path)
+    .attr('fill', '#ddd');
+
+  // Hover 인터랙션
+  countries
+    .on('mousemove', function(event, d){
+      const iso3 = getISO3(d.properties, d.id);
+      const val = (byIsoYear.get(iso3)?.get(currentYear)) ?? null;
+      const formatted = (val==null) ? '데이터 없음' : d3.format(',')(val);
+      tooltip
+        .style('left', (event.clientX) + 'px')
+        .style('top',  (event.clientY) + 'px')
+        .style('opacity', 1)
+        .style('transform','translate(-50%, calc(-100% - 14px))')
+        .html(`<div>${d.properties?.name || d.properties?.NAME || iso3 || 'Unknown'}</div>
+               <div style="font-size:28px; margin-top:4px;">${formatted}</div>`);
+    })
+    .on('mouseleave', function(){
+      tooltip.style('opacity', 0).style('transform','translate(-50%, -90%)');
+    });
+
+  // 채색 함수 (값이 클수록 어둡게)
+  function fillScale(values){
+    const v = values.filter(Number.isFinite);
+    const min = d3.min(v) ?? 0;
+    const max = d3.max(v) ?? 1;
+    // 밝기(L%)를 큰 값일수록 낮게: 92% (적음) -> 18% (많음)
+    const L = d3.scaleSqrt().domain([min, max]).range([92, 18]);
+    return x => `hsl(0,0%,${L(x)}%)`;
+  }
+
+  // 렌더 함수
+  function render(year){
+    // 해당 연도 값 수집
+    const vals = features.map(f=>{
+      const iso3 = getISO3(f.properties, f.id);
+      return (byIsoYear.get(iso3)?.get(year)) ?? null;
+    }).map(v => (v==null ? NaN : +v));
+
+    const color = fillScale(vals.filter(Number.isFinite));
+
+    countries
+      .transition().duration(350)
+      .attr('fill', function(d){
+        const iso3 = getISO3(d.properties, d.id);
+        const v = (byIsoYear.get(iso3)?.get(year));
+        if (v==null || !Number.isFinite(v)) return 'hsl(0,0%,92%)'; // 데이터 없음
+        return color(v);
+      })
+      .attr('opacity', 1);
+  }
+
+  render(currentYear);
+})();
 </script>
 </body>
 </html>
