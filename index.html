@@ -1,281 +1,71 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>국가별 실내 영화관 수 버블 차트</title>
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      width: 100%;
-    }
-    header {
-      padding: 14px 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      background: rgba(255,255,255,0.02);
-    }
-    .controls label {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    .controls input[type="range"] {
-      width: 280px;
-      accent-color: #38bdf8;
-    }
-    .controls .year {
-      font-size: 16px;
-      font-weight: 700;
-      color: #7dd3fc;
-      min-width: 60px;
-      text-align: right;
-    }
-    .chart-wrap {
-      position: relative;
-      flex: 1;
-      overflow: hidden;
-    }
-    svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-      background: radial-gradient(1200px 600px at 20% 0%, rgba(56,189,248,0.08), transparent 60%),
-                  radial-gradient(1000px 500px at 80% 0%, rgba(125,211,252,0.08), transparent 60%);
-    }
-    .bubble {
-      cursor: pointer;
-      transition: opacity 120ms ease;
-    }
-    .bubble:hover {
-      opacity: 0.9;
-    }
-    .legend {
-      position: absolute;
-      right: 12px;
-      bottom: 12px;
-      font-size: 12px;
-      color: #94a3b8;
-      background: rgba(15,23,42,0.6);
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(148,163,184,0.2);
-      border-radius: 8px;
-      padding: 8px 10px;
-    }
-    .hover-value {
-      position: fixed;
-      pointer-events: none;
-      z-index: 9999;
-      transform: translate(-50%, -120%);
-      font-weight: 800;
-      color: #e2e8f0;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.45);
-      display: none;
-      white-space: nowrap;
-    }
-    .hover-value .num {
-      font-size: clamp(28px, 6vw, 64px);
-      line-height: 1;
-    }
-    .hover-value .label {
-      display: block;
-      font-size: 12px;
-      opacity: 0.85;
-      text-align: center;
-      margin-top: 4px;
-    }
-    .error {
-      padding: 12px 18px;
-      color: #fecaca;
-      background: rgba(239,68,68,0.08);
-      border-top: 1px solid rgba(239,68,68,0.2);
-      font-size: 14px;
-    }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-  <script>
-    // 유틸: ISO 코드 색상 매핑
-    function colorForKey(key) {
-      const palette = d3.schemeTableau10;
-      // 간단한 해시로 색 선택
-      let hash = 0;
-      for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-      return palette[hash % palette.length];
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      const errorBox = document.getElementById('error');
-      const yearSpan = document.getElementById('yearValue');
-      const yearRange = document.getElementById('yearRange');
-      const hoverEl = document.getElementById('hoverValue');
-
-      let records = [];
-      try {
-        const res = await fetch('data/data.json');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const json = await res.json();
-        records = (json && json.records) ? json.records : [];
-      } catch (err) {
-        errorBox.style.display = 'block';
-        errorBox.textContent = '데이터를 불러오지 못했습니다. 로컬 파일 보안 제한이 있는 경우, 간단한 로컬 서버로 열어주세요.';
-        console.error(err);
-        return;
-      }
-
-      // 연도 범위 계산
-      const years = Array.from(new Set(records.map(r => r.year))).sort((a,b) => a-b);
-      const minYear = years[0];
-      const maxYear = years[years.length - 1];
-      yearRange.min = String(minYear);
-      yearRange.max = String(maxYear);
-      yearRange.value = String(maxYear);
-      yearSpan.textContent = String(maxYear);
-
-      // 연도별 데이터 구조: year -> [{code, value}]
-      const dataByYear = new Map();
-      for (const r of records) {
-        if (r.value == null) continue;
-        if (!dataByYear.has(r.year)) dataByYear.set(r.year, []);
-        dataByYear.get(r.year).push({ code: r.geoUnit, value: +r.value });
-      }
-
-      // 값 범위로 반지름 스케일 만들기 (제곱근 스케일)
-      const allValues = records.map(r => r.value).filter(v => v != null);
-      const vMin = d3.min(allValues);
-      const vMax = d3.max(allValues);
-      const svg = d3.select('#chart');
-      const { width, height } = svg.node().getBoundingClientRect();
-      const radiusScale = d3.scaleSqrt().domain([vMin || 0, vMax || 1]).range([4, Math.max(16, Math.min(width, height) * 0.07)]);
-
-      // 시뮬레이션 설정
-      let simulation = null;
-      const g = svg.append('g');
-
-      // 리사이즈 대응: 중심 업데이트
-      function restartForces(nodes) {
-        const rect = svg.node().getBoundingClientRect();
-        const cx = rect.width / 2;
-        const cy = rect.height / 2;
-        if (!simulation) {
-          simulation = d3.forceSimulation(nodes)
-            .force('charge', d3.forceManyBody().strength(2))
-            .force('center', d3.forceCenter(cx, cy))
-            .force('collision', d3.forceCollide(d => radiusScale(d.value) + 1))
-            .alpha(0.9)
-            .alphaDecay(0.03)
-            .on('tick', ticked);
-        } else {
-          simulation.nodes(nodes)
-            .force('center', d3.forceCenter(cx, cy))
-            .force('collision', d3.forceCollide(d => radiusScale(d.value) + 1))
-            .alpha(0.9)
-            .restart();
-        }
-      }
-
-      function ticked() {
-        g.selectAll('circle')
-          .attr('cx', d => d.x)
-          .attr('cy', d => d.y);
-      }
-
-      // 랜더링 함수
-      function render(year) {
-        const data = (dataByYear.get(year) || []).slice();
-        // 큰 값이 먼저 안정화되도록 섞기
-        data.sort((a,b) => d3.descending(a.value, b.value));
-
-        const bubbles = g.selectAll('circle').data(data, d => d.code);
-
-        bubbles.exit().transition().duration(250).attr('r', 0).remove();
-
-        const enter = bubbles.enter().append('circle')
-          .attr('class', 'bubble')
-          .attr('r', 0)
-          .attr('fill', d => colorForKey(d.code))
-          .attr('fill-opacity', 0.9)
-          .attr('stroke', 'rgba(255,255,255,0.35)')
-          .attr('stroke-width', 1)
-          .on('mousemove', (event, d) => {
-            hoverEl.style.display = 'block';
-            hoverEl.style.left = event.clientX + 'px';
-            hoverEl.style.top = event.clientY + 'px';
-            hoverEl.querySelector('.num').textContent = d3.format(',')(d.value);
-            hoverEl.querySelector('.label').textContent = d.code + ' (' + year + ')';
-          })
-          .on('mouseleave', () => {
-            hoverEl.style.display = 'none';
-          })
-          .call(sel => sel.transition().duration(500).attr('r', d => radiusScale(d.value)));
-
-        const merged = enter.merge(bubbles);
-        merged.transition().duration(350).attr('r', d => radiusScale(d.value)).attr('fill', d => colorForKey(d.code));
-
-        restartForces(data);
-      }
-
-      // 초기 랜더링
-      render(+yearRange.value);
-
-      yearRange.addEventListener('input', (e) => {
-        const y = +e.target.value;
-        yearSpan.textContent = String(y);
-        render(y);
-      });
-
-      // 반응형 리사이즈: 시뮬레이션 중심 업데이트
-      let resizeTimer = null;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          if (simulation) {
-            const nodes = simulation.nodes();
-            restartForces(nodes);
-          }
-        }, 150);
-      });
-    });
-  </script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>문화·자연 유산 1인당 공공지출(UNESCO) 인터랙티브</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+  :root { --bg:#0b0b0c; --fg:#eaeaea; --muted:#9aa1aa; --grid:#2b2f36; }
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Apple SD Gothic Neo, "맑은 고딕", sans-serif}
+  header{padding:18px 20px 6px}
+  h1{font-size:18px;margin:0 0 4px}
+  .wrap{padding:0 16px 20px}
+  .chart{max-width:1100px;margin:0 auto;background:#101216;border-radius:14px;box-shadow:0 0 0 1px #161a20}
+  svg{display:block;width:100%;height:560px}
+  .y .tick text{fill:var(--muted);font-size:11px}
+  .y path, .y line{stroke:var(--grid)}
+  .grid line{stroke:var(--grid)}
+  .series{fill:none;stroke-width:2}
+  .point{fill:#fff;stroke:#000;stroke-width:0.5;opacity:0}
+  .point:hover{opacity:1}
+  .tooltip{
+    position:fixed;pointer-events:none;opacity:0;transition:opacity .12s ease;
+    background:#11161d;color:#e9eef7;border:1px solid #1f2630;border-radius:10px;
+    padding:10px 12px;font-size:12.5px;box-shadow:0 6px 24px rgba(0,0,0,.35)
+  }
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;padding:10px 14px;border-top:1px solid #151a22;color:#b9c0c8}
+  .legend .chip{display:inline-flex;align-items:center;gap:8px;font-size:12px;white-space:nowrap}
+  .legend .sw{width:10px;height:10px;border-radius:10px;display:inline-block;box-shadow:0 0 0 1px rgba(0,0,0,.25) inset}
+  footer{max-width:1100px;margin:10px auto 0;padding:0 16px 24px;color:#8f97a2;font-size:12px}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>유네스코: 국가별 실내 영화관 수 버블 차트</h1>
-    </header>
-    <div class="controls">
-      <label for="yearRange">연도</label>
-      <input id="yearRange" type="range" min="2000" max="2025" step="1" />
-      <div class="year" id="yearValue">-</div>
-    </div>
-    <div class="chart-wrap">
-      <svg id="chart" preserveAspectRatio="xMidYMid meet"></svg>
-      <div class="legend">원 크기 = 실내 영화관 수</div>
-    </div>
-    <div id="error" class="error" style="display:none"></div>
-  </div>
-  <div id="hoverValue" class="hover-value">
-    <div class="num">0</div>
-    <span class="label"></span>
-  </div>
-</body>
-</html>
+<header>
+  <h1>총 1인당 공공지출(문화·자연 유산, PPP$2017 기준)</h1>
+  <div style="color:#9aa1aa;font-size:12px">Y축 100–500(100 단위), X축은 연도 기준으로 배치(표시는 숨김)</div>
+</header>
 
+<div class="wrap">
+  <div class="chart">
+    <svg id="viz" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid meet" aria-label="UNESCO heritage public spending chart"></svg>
+    <div class="legend" id="legend" aria-hidden="true"></div>
+  </div>
+</div>
+
+<div class="tooltip" id="tt"></div>
+
+<footer>
+  데이터: UNESCO UIS (사용자 제공 파일). 시리즈는 값이 100~500 구간에 하나라도 포함될 때만 표시됩니다.
+</footer>
+
+<script>
+(async function(){
+  // 1) 데이터 로드 (같은 폴더의 data.json)
+  const res = await fetch('data.json');
+  const json = await res.json();
+  const records = (json.records || [])
+    .map(d => ({
+      country: d.geoUnit,
+      year: +d.year,
+      value: +d.value
+    }))
+    .filter(d => Number.isFinite(d.year) && Number.isFinite(d.value));
+
+  // 국가별로 그룹화 & 연도 정렬
+  const byCountry = d3.group(records, d => d.country);
+  for (const [k, arr] of byCountry) arr.sort((a,b)=>d3.ascending(a.year,b.year));
+
+  // 차트 영역 설정
+  const svg = d3.select('#viz');
+  const { width, height } = svg.node().view
